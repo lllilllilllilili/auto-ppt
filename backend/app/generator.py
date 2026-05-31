@@ -14,12 +14,9 @@ from app.models import SlideRequest, ImageData
 
 TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), "assets", "template.pptx")
 
-# Layout indices from the template
 LAYOUT_TITLE = 0      # 제목 슬라이드
 LAYOUT_CONTENT = 1    # 제목 및 내용
-LAYOUT_TWO_COL = 2    # 콘텐츠 2개
 LAYOUT_COMPARE = 3    # 비교
-LAYOUT_TITLE_ONLY = 4 # 제목만
 
 COVER_BG = RGBColor(0x00, 0x1D, 0x2C)
 
@@ -28,6 +25,33 @@ def _set_slide_bg(slide, color):
     fill = slide.background.fill
     fill.solid()
     fill.fore_color.rgb = color
+
+
+def _remove_placeholder(slide, idx):
+    """placeholder를 슬라이드에서 완전히 제거"""
+    for ph in slide.placeholders:
+        if ph.placeholder_format.idx == idx:
+            sp = ph._element
+            sp.getparent().remove(sp)
+            return
+
+
+def _set_placeholder_text(ph, text, font_name="맑은 고딕", font_size=None,
+                          font_color=None, bold=None, alignment=None):
+    tf = ph.text_frame
+    tf.clear()
+    p = tf.paragraphs[0]
+    p.text = text
+    if font_name:
+        p.font.name = font_name
+    if font_size:
+        p.font.size = font_size
+    if font_color:
+        p.font.color.rgb = font_color
+    if bold is not None:
+        p.font.bold = bold
+    if alignment is not None:
+        p.alignment = alignment
 
 
 def _add_textbox(slide, left, top, width, height, text, font_name="맑은 고딕",
@@ -50,6 +74,18 @@ def _add_textbox(slide, left, top, width, height, text, font_name="맑은 고딕
     p.font.bold = bold
     p.alignment = alignment
     return txbox
+
+
+def _fill_bullets_in_placeholder(ph, bullets, font_name="맑은 고딕", font_size=Pt(14)):
+    tf = ph.text_frame
+    tf.clear()
+    for i, b in enumerate(bullets):
+        p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+        if i > 0:
+            p.space_before = Pt(6)
+        p.text = b
+        p.font.name = font_name
+        p.font.size = font_size
 
 
 def _add_bullets(slide, left, top, width, height, bullets,
@@ -99,99 +135,82 @@ def _add_image(slide, img_data: ImageData, left, top, width, height):
     slide.shapes.add_picture(stream, left, top, width, height)
 
 
-# ── Slide Builders (using template layouts) ──
+# ── Slide Builders ──
 
 def _build_title_slide(prs, data: SlideRequest):
-    """표지: 원본 슬라이드1과 동일한 포맷"""
+    """표지: 원본 슬라이드1 포맷. placeholder를 직접 사용."""
     slide = prs.slides.add_slide(prs.slide_layouts[LAYOUT_TITLE])
     _set_slide_bg(slide, COVER_BG)
 
-    # 기존 placeholder 숨기기 (빈 텍스트)
     for ph in slide.placeholders:
-        ph.text = ""
-
-    _add_textbox(
-        slide, Inches(3.44), Inches(1.86), Inches(3.39), Inches(0.76),
-        data.title, font_size=Pt(40),
-        font_color=RGBColor(0xFF, 0xFF, 0xFF),
-        alignment=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE,
-    )
-
-    _add_divider(
-        slide, Inches(1.63), Inches(2.70), Inches(7.01),
-        RGBColor(0xFF, 0xFF, 0xFF),
-    )
-
-    if data.subtitle:
-        _add_textbox(
-            slide, Inches(5.79), Inches(3.91), Inches(2.91), Inches(0.45),
-            data.subtitle, font_size=Pt(14),
-            font_color=RGBColor(0xBB, 0xBB, 0xBB),
-            alignment=PP_ALIGN.RIGHT, anchor=MSO_ANCHOR.MIDDLE,
-        )
+        idx = ph.placeholder_format.idx
+        if idx == 0:  # CENTER_TITLE
+            _set_placeholder_text(ph, data.title, font_size=Pt(40),
+                                  font_color=RGBColor(0xFF, 0xFF, 0xFF),
+                                  alignment=PP_ALIGN.CENTER)
+        elif idx == 1:  # SUBTITLE
+            _set_placeholder_text(ph, data.subtitle or "",
+                                  font_size=Pt(14),
+                                  font_color=RGBColor(0xBB, 0xBB, 0xBB),
+                                  alignment=PP_ALIGN.RIGHT)
+        else:
+            _remove_placeholder(slide, idx)
 
 
 def _build_toc_slide(prs, data: SlideRequest):
-    """목차: layout[1] 제목 및 내용 사용"""
+    """목차: placeholder[0]에 제목, placeholder[1]에 목차 내용."""
     slide = prs.slides.add_slide(prs.slide_layouts[LAYOUT_CONTENT])
 
-    # 제목 placeholder 채우기
     for ph in slide.placeholders:
-        if ph.placeholder_format.idx == 0:
-            ph.text = "목차"
-            for run in ph.text_frame.paragraphs[0].runs:
-                run.font.bold = True
-        elif ph.placeholder_format.idx == 1:
-            ph.text = ""
-
-    if data.bullets:
-        txbox = slide.shapes.add_textbox(Inches(0.5), Inches(1.06), Inches(5.48), Inches(2.93))
-        tf = txbox.text_frame
-        tf.word_wrap = True
-        for i, b in enumerate(data.bullets):
-            p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
-            if i > 0:
-                p.space_before = Pt(10)
-            p.text = f"{i+1}. {b}"
-            p.font.name = "맑은 고딕"
-            p.font.size = Pt(15)
-            p.font.bold = True
+        idx = ph.placeholder_format.idx
+        if idx == 0:
+            _set_placeholder_text(ph, "목차", bold=True)
+        elif idx == 1:
+            if data.bullets:
+                tf = ph.text_frame
+                tf.clear()
+                for i, b in enumerate(data.bullets):
+                    p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+                    if i > 0:
+                        p.space_before = Pt(10)
+                    p.text = f"{i+1}. {b}"
+                    p.font.name = "맑은 고딕"
+                    p.font.size = Pt(15)
+                    p.font.bold = True
+            else:
+                _remove_placeholder(slide, idx)
 
 
 def _build_content_slide(prs, data: SlideRequest):
-    """콘텐츠: layout[1] 제목 및 내용 사용"""
+    """콘텐츠: placeholder 사용 + 이미지는 별도 추가."""
     slide = prs.slides.add_slide(prs.slide_layouts[LAYOUT_CONTENT])
 
     for ph in slide.placeholders:
-        if ph.placeholder_format.idx == 0:
-            ph.text = data.title
-        elif ph.placeholder_format.idx == 1:
-            ph.text = ""
+        idx = ph.placeholder_format.idx
+        if idx == 0:
+            _set_placeholder_text(ph, data.title)
+        elif idx == 1:
+            if data.bullets:
+                _fill_bullets_in_placeholder(ph, data.bullets)
+            else:
+                _remove_placeholder(slide, idx)
 
-    has_images = len(data.images) > 0
-    text_width = Inches(5.5) if has_images else Inches(8.6)
-
-    if data.bullets:
-        _add_bullets(
-            slide, Inches(0.5), Inches(1.08), text_width, Inches(3.9),
-            data.bullets,
-        )
-
-    if has_images:
+    if data.images:
         _add_image(slide, data.images[0], Inches(6.3), Inches(1.08), Inches(3.2), Inches(2.5))
         if len(data.images) > 1:
             _add_image(slide, data.images[1], Inches(6.3), Inches(3.8), Inches(3.2), Inches(1.5))
 
 
 def _build_image_text_slide(prs, data: SlideRequest):
-    """이미지+텍스트: layout[1] 사용"""
+    """이미지+텍스트."""
     slide = prs.slides.add_slide(prs.slide_layouts[LAYOUT_CONTENT])
 
     for ph in slide.placeholders:
-        if ph.placeholder_format.idx == 0:
-            ph.text = data.title
-        elif ph.placeholder_format.idx == 1:
-            ph.text = ""
+        idx = ph.placeholder_format.idx
+        if idx == 0:
+            _set_placeholder_text(ph, data.title)
+        elif idx == 1:
+            _remove_placeholder(slide, idx)
 
     if data.images:
         _add_image(slide, data.images[0], Inches(1.5), Inches(1.18), Inches(7), Inches(3.0))
@@ -205,14 +224,15 @@ def _build_image_text_slide(prs, data: SlideRequest):
 
 
 def _build_grid_slide(prs, data: SlideRequest):
-    """이미지 그리드: layout[1] 사용"""
+    """이미지 그리드."""
     slide = prs.slides.add_slide(prs.slide_layouts[LAYOUT_CONTENT])
 
     for ph in slide.placeholders:
-        if ph.placeholder_format.idx == 0:
-            ph.text = data.title
-        elif ph.placeholder_format.idx == 1:
-            ph.text = ""
+        idx = ph.placeholder_format.idx
+        if idx == 0:
+            _set_placeholder_text(ph, data.title)
+        elif idx == 1:
+            _remove_placeholder(slide, idx)
 
     images = data.images
     labels = data.bullets
@@ -227,9 +247,9 @@ def _build_grid_slide(prs, data: SlideRequest):
     total_w = cols * card_w + (cols - 1) * gap
     start_x = (Inches(10) - total_w) // 2
 
-    for idx, img in enumerate(images):
-        col = idx % cols
-        row = idx // cols
+    for i, img in enumerate(images):
+        col = i % cols
+        row = i // cols
         if row >= 2:
             break
         x = start_x + col * (card_w + gap)
@@ -237,7 +257,7 @@ def _build_grid_slide(prs, data: SlideRequest):
 
         _add_image(slide, img, x, y, card_w, card_h)
 
-        label = labels[idx] if idx < len(labels) else ""
+        label = labels[i] if i < len(labels) else ""
         if label:
             _add_textbox(
                 slide, x, y + card_h + Inches(0.05), card_w, Inches(0.25),
@@ -246,51 +266,38 @@ def _build_grid_slide(prs, data: SlideRequest):
 
 
 def _build_two_column_slide(prs, data: SlideRequest):
-    """2단 비교: layout[3] 비교 사용"""
+    """2단 비교: 비교 레이아웃의 placeholder 직접 사용."""
     slide = prs.slides.add_slide(prs.slide_layouts[LAYOUT_COMPARE])
 
     for ph in slide.placeholders:
         idx = ph.placeholder_format.idx
         if idx == 0:
-            ph.text = data.title
+            _set_placeholder_text(ph, data.title)
         elif idx == 1:
-            ph.text = data.left_title
+            _set_placeholder_text(ph, data.left_title, bold=True)
         elif idx == 2:
-            tf = ph.text_frame
-            tf.clear()
-            for i, b in enumerate(data.left_bullets):
-                p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
-                p.text = b
-                p.font.size = Pt(14)
-                p.font.name = "맑은 고딕"
+            _fill_bullets_in_placeholder(ph, data.left_bullets)
         elif idx == 3:
-            ph.text = data.right_title
+            _set_placeholder_text(ph, data.right_title, bold=True)
         elif idx == 4:
-            tf = ph.text_frame
-            tf.clear()
-            for i, b in enumerate(data.right_bullets):
-                p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
-                p.text = b
-                p.font.size = Pt(14)
-                p.font.name = "맑은 고딕"
+            _fill_bullets_in_placeholder(ph, data.right_bullets)
 
 
 def _build_closing_slide(prs, data: SlideRequest):
-    """마무리: 원본 슬라이드13과 동일한 포맷"""
+    """마무리: 원본 슬라이드13 포맷."""
     slide = prs.slides.add_slide(prs.slide_layouts[LAYOUT_CONTENT])
 
     for ph in slide.placeholders:
-        if ph.placeholder_format.idx == 0:
-            ph.text = "맺음말"
-        elif ph.placeholder_format.idx == 1:
-            ph.text = ""
+        idx = ph.placeholder_format.idx
+        if idx == 0:
+            _set_placeholder_text(ph, "맺음말")
+        elif idx == 1:
+            _remove_placeholder(slide, idx)
 
     _add_textbox(
         slide, Inches(2.80), Inches(2.16), Inches(7.00), Inches(2.04),
         data.title or "감사합니다.",
-        font_size=Pt(54),
-        font_color=RGBColor(0x33, 0x33, 0x33),
-        alignment=PP_ALIGN.LEFT, anchor=MSO_ANCHOR.MIDDLE,
+        font_size=Pt(54), alignment=PP_ALIGN.LEFT, anchor=MSO_ANCHOR.MIDDLE,
     )
 
 
