@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PresentationData, SlideLayout, createSlide, LAYOUT_LABELS } from "@/types";
 import SlideCard from "@/components/SlideCard";
+import { migrateFromLocalStorage } from "@/lib/image-store";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -24,6 +25,8 @@ export default function Home() {
   const [data, setData] = useState<PresentationData>(initialData);
   const [loading, setLoading] = useState(false);
   const [addMenuOpen, setAddMenuOpen] = useState(false);
+
+  useEffect(() => { migrateFromLocalStorage(); }, []);
 
   const updateSlide = (index: number, slide: PresentationData["slides"][number]) => {
     const next = [...data.slides];
