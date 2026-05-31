@@ -19,7 +19,7 @@ app.add_middleware(
 
 @app.post("/api/generate")
 def generate(req: PresentationRequest):
-    buffer = generate_pptx(req.title, req.theme, req.slides)
+    buffer = generate_pptx(req.title, req.slides)
 
     filename = f"{req.title}.pptx"
     encoded = quote(filename)

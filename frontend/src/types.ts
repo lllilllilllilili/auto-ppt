@@ -24,11 +24,8 @@ export interface SlideData {
   caption: string;
 }
 
-export type ThemeName = "business" | "simple" | "dark";
-
 export interface PresentationData {
   title: string;
-  theme: ThemeName;
   slides: SlideData[];
 }
 
@@ -51,12 +48,6 @@ export const LAYOUT_DESC: Record<SlideLayout, string> = {
   "two-column": "좌/우 비교",
   closing: "마무리 문구 (다크 배경)",
 };
-
-export const THEME_OPTIONS: { value: ThemeName; label: string; desc: string }[] = [
-  { value: "business", label: "비즈니스", desc: "다크 네이비 + 라이트 그레이" },
-  { value: "simple", label: "심플", desc: "딥 네이비 + 화이트" },
-  { value: "dark", label: "다크", desc: "블랙 + 시안 포인트" },
-];
 
 export const POSITION_OPTIONS: { value: ImagePosition; label: string }[] = [
   { value: "left-top", label: "좌상단" },

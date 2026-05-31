@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { PresentationData, ThemeName, SlideLayout, createSlide, LAYOUT_LABELS } from "@/types";
+import { PresentationData, SlideLayout, createSlide, LAYOUT_LABELS } from "@/types";
 import SlideCard from "@/components/SlideCard";
-import ThemeSelector from "@/components/ThemeSelector";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -12,7 +11,6 @@ const ADD_LAYOUTS: SlideLayout[] = ["content", "image-text", "grid", "two-column
 function initialData(): PresentationData {
   return {
     title: "",
-    theme: "business",
     slides: [
       createSlide("title"),
       createSlide("toc"),
@@ -64,7 +62,6 @@ export default function Home() {
     try {
       const payload = {
         title: data.title,
-        theme: data.theme,
         slides: data.slides.map(({ id, ...rest }) => ({
           ...rest,
           bullets: rest.bullets.filter((b) => b.trim()),
@@ -153,12 +150,6 @@ export default function Home() {
             placeholder="예: 5월 전략발표"
             className="w-full px-4 py-3 text-lg border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition"
           />
-        </section>
-
-        {/* 테마 */}
-        <section className="space-y-2">
-          <label className="block text-sm font-semibold text-zinc-700">테마</label>
-          <ThemeSelector value={data.theme} onChange={(theme: ThemeName) => setData({ ...data, theme })} />
         </section>
 
         {/* 슬라이드 목록 */}

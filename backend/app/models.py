@@ -24,5 +24,4 @@ class SlideRequest(BaseModel):
 
 class PresentationRequest(BaseModel):
     title: str
-    theme: str = "business"
     slides: list[SlideRequest]

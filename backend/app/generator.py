@@ -374,7 +374,7 @@ LAYOUT_BUILDERS = {
 }
 
 
-def generate_pptx(title: str, theme_name: str, slides: list[SlideRequest]) -> BytesIO:
+def generate_pptx(title: str, slides: list[SlideRequest]) -> BytesIO:
     prs = Presentation(TEMPLATE_PATH)
 
     for slide_data in slides:
