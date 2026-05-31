@@ -6,6 +6,7 @@ from pydantic import BaseModel
 class ImageData(BaseModel):
     data: str  # base64
     content_type: str = "image/png"
+    position: str = "right-top"  # 배치 위치 프리셋
 
 
 class SlideRequest(BaseModel):

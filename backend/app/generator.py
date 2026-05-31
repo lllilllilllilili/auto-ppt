@@ -157,6 +157,44 @@ def _add_image(slide, img_data: ImageData, left, top, max_width, max_height):
     slide.shapes.add_picture(stream, left, top, width, height)
 
 
+# 슬라이드 영역: 제목바 아래 콘텐츠 영역 (10in x ~4.5in)
+IMAGE_POSITIONS = {
+    "left-top":    {"left": 0.3,  "top": 1.0, "w": 4.0, "h": 2.8},
+    "right-top":   {"left": 5.5,  "top": 1.0, "w": 4.2, "h": 2.8},
+    "center":      {"left": 1.5,  "top": 1.0, "w": 7.0, "h": 3.5},
+    "full":        {"left": 0.3,  "top": 1.0, "w": 9.4, "h": 4.2},
+    "left-bottom": {"left": 0.3,  "top": 3.0, "w": 4.0, "h": 2.2},
+    "right-bottom":{"left": 5.5,  "top": 3.0, "w": 4.2, "h": 2.2},
+    "left-half":   {"left": 0.3,  "top": 1.0, "w": 4.5, "h": 4.2},
+}
+
+
+def _add_positioned_image(slide, img_data: ImageData):
+    pos = IMAGE_POSITIONS.get(img_data.position, IMAGE_POSITIONS["right-top"])
+    _add_image(slide, img_data,
+               Inches(pos["left"]), Inches(pos["top"]),
+               Inches(pos["w"]), Inches(pos["h"]))
+
+
+def _get_text_area_for_images(images: list[ImageData]):
+    """이미지 위치에 따라 텍스트 영역을 조정"""
+    if not images:
+        return Inches(0.5), Inches(8.6)
+
+    positions = [img.position for img in images]
+
+    if any(p in ("full", "center") for p in positions):
+        return None, None
+
+    if any(p.startswith("right") for p in positions):
+        return Inches(0.5), Inches(4.8)
+
+    if any(p.startswith("left") for p in positions):
+        return Inches(5.0), Inches(4.5)
+
+    return Inches(0.5), Inches(8.6)
+
+
 # ── Slide Builders ──
 
 def _build_title_slide(prs, data: SlideRequest):
@@ -204,27 +242,29 @@ def _build_toc_slide(prs, data: SlideRequest):
 
 
 def _build_content_slide(prs, data: SlideRequest):
-    """콘텐츠: placeholder 사용 + 이미지는 별도 추가."""
+    """콘텐츠: placeholder 사용 + 이미지는 위치 프리셋에 따라 배치."""
     slide = prs.slides.add_slide(prs.slide_layouts[LAYOUT_CONTENT])
+
+    text_left, text_width = _get_text_area_for_images(data.images)
 
     for ph in slide.placeholders:
         idx = ph.placeholder_format.idx
         if idx == 0:
             _set_placeholder_text(ph, data.title)
         elif idx == 1:
-            if data.bullets:
+            if data.bullets and text_left is not None:
                 _fill_bullets_in_placeholder(ph, data.bullets)
+                ph.left = int(text_left)
+                ph.width = int(text_width)
             else:
                 _remove_placeholder(slide, idx)
 
-    if data.images:
-        _add_image(slide, data.images[0], Inches(6.3), Inches(1.08), Inches(3.2), Inches(2.5))
-        if len(data.images) > 1:
-            _add_image(slide, data.images[1], Inches(6.3), Inches(3.8), Inches(3.2), Inches(1.5))
+    for img in data.images:
+        _add_positioned_image(slide, img)
 
 
 def _build_image_text_slide(prs, data: SlideRequest):
-    """이미지+텍스트."""
+    """이미지+텍스트: 이미지 위치 프리셋 지원."""
     slide = prs.slides.add_slide(prs.slide_layouts[LAYOUT_CONTENT])
 
     for ph in slide.placeholders:
@@ -234,8 +274,8 @@ def _build_image_text_slide(prs, data: SlideRequest):
         elif idx == 1:
             _remove_placeholder(slide, idx)
 
-    if data.images:
-        _add_image(slide, data.images[0], Inches(1.5), Inches(1.18), Inches(7), Inches(3.0))
+    for img in data.images:
+        _add_positioned_image(slide, img)
 
     caption = data.caption or (data.bullets[0] if data.bullets else "")
     if caption:

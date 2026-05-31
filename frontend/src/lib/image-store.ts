@@ -30,6 +30,7 @@ export function addImage(file: File): Promise<ImageItem> {
         data: reader.result as string,
         name: file.name,
         content_type: file.type || "image/png",
+        position: "right-top",
       };
 
       const existing = loadImages();

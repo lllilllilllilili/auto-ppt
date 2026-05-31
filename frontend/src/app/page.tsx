@@ -73,6 +73,7 @@ export default function Home() {
           images: rest.images.map((img) => ({
             data: img.data,
             content_type: img.content_type,
+            position: img.position || "right-top",
           })),
         })),
       };
