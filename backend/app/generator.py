@@ -130,8 +130,30 @@ def _decode_image(img_data: ImageData) -> BytesIO:
     return BytesIO(base64.b64decode(raw))
 
 
-def _add_image(slide, img_data: ImageData, left, top, width, height):
+def _get_image_size(stream: BytesIO):
+    """PIL로 이미지 원본 크기를 읽고 stream을 되감음"""
+    from PIL import Image as PILImage
+    img = PILImage.open(stream)
+    w, h = img.size
+    stream.seek(0)
+    return w, h
+
+
+def _add_image(slide, img_data: ImageData, left, top, max_width, max_height):
+    """원본 비율을 유지하면서 max_width x max_height 안에 맞춤"""
     stream = _decode_image(img_data)
+    orig_w, orig_h = _get_image_size(stream)
+
+    aspect = orig_w / orig_h
+    box_aspect = max_width / max_height
+
+    if aspect > box_aspect:
+        width = max_width
+        height = int(max_width / aspect)
+    else:
+        height = max_height
+        width = int(max_height * aspect)
+
     slide.shapes.add_picture(stream, left, top, width, height)
 
 

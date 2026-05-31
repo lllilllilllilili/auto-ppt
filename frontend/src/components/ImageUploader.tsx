@@ -33,8 +33,8 @@ export default function ImageUploader({ images, onChange, max = 6 }: ImageUpload
     <div className="space-y-2">
       <div className="flex flex-wrap gap-2">
         {images.map((img) => (
-          <div key={img.id} className="relative group w-20 h-20 rounded-lg overflow-hidden border border-zinc-200 bg-zinc-100">
-            <img src={img.data} alt={img.name} className="w-full h-full object-cover" />
+          <div key={img.id} className="relative group w-28 h-28 rounded-lg overflow-hidden border border-zinc-200 bg-zinc-100">
+            <img src={img.data} alt={img.name} className="w-full h-full object-contain bg-zinc-50" />
             <button
               onClick={() => remove(img.id)}
               className="absolute top-0.5 right-0.5 w-5 h-5 bg-black/60 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
@@ -50,7 +50,7 @@ export default function ImageUploader({ images, onChange, max = 6 }: ImageUpload
         {images.length < max && (
           <button
             onClick={() => inputRef.current?.click()}
-            className="w-20 h-20 rounded-lg border-2 border-dashed border-zinc-300 hover:border-blue-400 text-zinc-400 hover:text-blue-500 flex flex-col items-center justify-center gap-1 transition"
+            className="w-28 h-28 rounded-lg border-2 border-dashed border-zinc-300 hover:border-blue-400 text-zinc-400 hover:text-blue-500 flex flex-col items-center justify-center gap-1 transition"
           >
             <span className="text-xl leading-none">+</span>
             <span className="text-[10px]">이미지</span>
