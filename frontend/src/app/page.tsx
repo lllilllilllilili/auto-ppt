@@ -106,9 +106,12 @@ export default function Home() {
     }
   };
 
-  const hasContent = data.slides.some(
-    (s) => s.title.trim() || s.bullets.some((b) => b.trim()) || s.images.length > 0
-  );
+  const hasContent = data.slides.some((s) => {
+    const title = s.title?.trim();
+    const hasBullets = Array.isArray(s.bullets) && s.bullets.some((b) => b.trim());
+    const hasImages = Array.isArray(s.images) && s.images.length > 0;
+    return title || hasBullets || hasImages;
+  });
 
   return (
     <div className="min-h-screen">

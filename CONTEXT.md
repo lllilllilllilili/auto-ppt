@@ -32,10 +32,17 @@ cd frontend && npm run dev
 ## 현재 상태
 - [x] Backend API 구현 (POST /api/generate)
 - [x] Frontend UI 구현 (입력 폼 + 다운로드)
-- [x] 4종 레이아웃: title, content, two-column, closing
-- [x] 3종 테마: business, simple, dark
+- [x] 7종 레이아웃: title, toc, content, image-text, grid, two-column, closing
+- [x] 3종 테마: business(네이비), simple(딥네이비), dark(블랙+시안)
+- [x] 이미지 업로드 (localStorage + base64 → PPT 삽입)
+- [x] 참고 PPT 포맷 반영 (10x5.625in, 다크 표지, 컬러 제목바)
 - [x] API 테스트 통과 (PPTX 파일 정상 생성)
-- [x] Frontend 정상 접속 확인
+- [x] Vercel 배포 (frontend, Root Directory: frontend)
+- [x] GitHub push 완료
+
+## 의사결정 이력
+- 참고 PPT(퐆.pptx)의 슬라이드 크기(10x5.625in), 색상(#001D2C 표지), 레이아웃 패턴을 기반으로 재구성
+- 이미지는 localStorage에 base64로 저장, API 호출 시 base64로 전송
 
 ## 마지막 업데이트
-2026-05-31 17:52
+2026-05-31 18:18
