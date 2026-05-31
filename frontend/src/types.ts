@@ -1,4 +1,11 @@
-export type SlideLayout = "title" | "content" | "two-column" | "closing";
+export type SlideLayout = "title" | "toc" | "content" | "image-text" | "grid" | "two-column" | "closing";
+
+export interface ImageItem {
+  id: string;
+  data: string; // base64 data URL
+  name: string;
+  content_type: string;
+}
 
 export interface SlideData {
   id: string;
@@ -10,6 +17,8 @@ export interface SlideData {
   left_bullets: string[];
   right_title: string;
   right_bullets: string[];
+  images: ImageItem[];
+  caption: string;
 }
 
 export type ThemeName = "business" | "simple" | "dark";
@@ -22,15 +31,28 @@ export interface PresentationData {
 
 export const LAYOUT_LABELS: Record<SlideLayout, string> = {
   title: "표지",
+  toc: "목차",
   content: "콘텐츠",
+  "image-text": "이미지+텍스트",
+  grid: "이미지 그리드",
   "two-column": "2단 비교",
   closing: "마무리",
 };
 
+export const LAYOUT_DESC: Record<SlideLayout, string> = {
+  title: "제목 + 부제목 (다크 배경)",
+  toc: "번호 매겨진 목차 리스트",
+  content: "제목바 + 불릿 + 이미지(선택)",
+  "image-text": "큰 이미지 + 캡션",
+  grid: "이미지 카드 그리드 + 라벨",
+  "two-column": "좌/우 비교",
+  closing: "마무리 문구 (다크 배경)",
+};
+
 export const THEME_OPTIONS: { value: ThemeName; label: string; desc: string }[] = [
-  { value: "business", label: "비즈니스", desc: "흰 배경 + 네이비 포인트" },
-  { value: "simple", label: "심플", desc: "밝은 회색 + 블랙" },
-  { value: "dark", label: "다크", desc: "차콜 배경 + 시안 포인트" },
+  { value: "business", label: "비즈니스", desc: "다크 네이비 + 라이트 그레이" },
+  { value: "simple", label: "심플", desc: "딥 네이비 + 화이트" },
+  { value: "dark", label: "다크", desc: "블랙 + 시안 포인트" },
 ];
 
 export function createSlide(layout: SlideLayout = "content"): SlideData {
@@ -44,5 +66,7 @@ export function createSlide(layout: SlideLayout = "content"): SlideData {
     left_bullets: [""],
     right_title: "",
     right_bullets: [""],
+    images: [],
+    caption: "",
   };
 }

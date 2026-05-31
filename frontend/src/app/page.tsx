@@ -1,23 +1,31 @@
 "use client";
 
 import { useState } from "react";
-import { PresentationData, ThemeName, SlideLayout, createSlide } from "@/types";
+import { PresentationData, ThemeName, SlideLayout, createSlide, LAYOUT_LABELS } from "@/types";
 import SlideCard from "@/components/SlideCard";
 import ThemeSelector from "@/components/ThemeSelector";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
+const ADD_LAYOUTS: SlideLayout[] = ["content", "image-text", "grid", "two-column", "toc"];
+
 function initialData(): PresentationData {
   return {
     title: "",
     theme: "business",
-    slides: [createSlide("title"), createSlide("content"), createSlide("closing")],
+    slides: [
+      createSlide("title"),
+      createSlide("toc"),
+      createSlide("content"),
+      createSlide("closing"),
+    ],
   };
 }
 
 export default function Home() {
   const [data, setData] = useState<PresentationData>(initialData);
   const [loading, setLoading] = useState(false);
+  const [addMenuOpen, setAddMenuOpen] = useState(false);
 
   const updateSlide = (index: number, slide: PresentationData["slides"][number]) => {
     const next = [...data.slides];
@@ -37,12 +45,13 @@ export default function Home() {
     setData({ ...data, slides: next });
   };
 
-  const addSlide = (layout: SlideLayout = "content") => {
+  const addSlide = (layout: SlideLayout) => {
     const closingIndex = data.slides.findIndex((s) => s.layout === "closing");
     const next = [...data.slides];
     const insertAt = closingIndex >= 0 ? closingIndex : next.length;
     next.splice(insertAt, 0, createSlide(layout));
     setData({ ...data, slides: next });
+    setAddMenuOpen(false);
   };
 
   const generate = async () => {
@@ -61,6 +70,10 @@ export default function Home() {
           bullets: rest.bullets.filter((b) => b.trim()),
           left_bullets: rest.left_bullets.filter((b) => b.trim()),
           right_bullets: rest.right_bullets.filter((b) => b.trim()),
+          images: rest.images.map((img) => ({
+            data: img.data,
+            content_type: img.content_type,
+          })),
         })),
       };
 
@@ -94,7 +107,7 @@ export default function Home() {
   };
 
   const hasContent = data.slides.some(
-    (s) => s.title.trim() || s.bullets.some((b) => b.trim())
+    (s) => s.title.trim() || s.bullets.some((b) => b.trim()) || s.images.length > 0
   );
 
   return (
@@ -104,10 +117,7 @@ export default function Home() {
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="text-lg font-bold text-zinc-800">PPT 자동 생성기</h1>
           <div className="flex items-center gap-2">
-            <button
-              onClick={reset}
-              className="px-3 py-1.5 text-sm text-zinc-500 hover:text-zinc-700 transition"
-            >
+            <button onClick={reset} className="px-3 py-1.5 text-sm text-zinc-500 hover:text-zinc-700 transition">
               초기화
             </button>
             <button
@@ -121,7 +131,7 @@ export default function Home() {
                   생성 중...
                 </>
               ) : (
-                "PPT 생성 & 다운로드"
+                "PPT 다운로드"
               )}
             </button>
           </div>
@@ -136,7 +146,7 @@ export default function Home() {
             type="text"
             value={data.title}
             onChange={(e) => setData({ ...data, title: e.target.value })}
-            placeholder="예: 2026년 상반기 리뷰"
+            placeholder="예: 5월 전략발표"
             className="w-full px-4 py-3 text-lg border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition"
           />
         </section>
@@ -144,19 +154,14 @@ export default function Home() {
         {/* 테마 */}
         <section className="space-y-2">
           <label className="block text-sm font-semibold text-zinc-700">테마</label>
-          <ThemeSelector
-            value={data.theme}
-            onChange={(theme: ThemeName) => setData({ ...data, theme })}
-          />
+          <ThemeSelector value={data.theme} onChange={(theme: ThemeName) => setData({ ...data, theme })} />
         </section>
 
         {/* 슬라이드 목록 */}
         <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <label className="block text-sm font-semibold text-zinc-700">
-              슬라이드 ({data.slides.length})
-            </label>
-          </div>
+          <label className="block text-sm font-semibold text-zinc-700">
+            슬라이드 ({data.slides.length})
+          </label>
 
           <div className="space-y-4">
             {data.slides.map((slide, i) => (
@@ -176,19 +181,30 @@ export default function Home() {
           </div>
 
           {/* 슬라이드 추가 */}
-          <div className="flex items-center justify-center gap-2 pt-2">
+          <div className="relative flex items-center justify-center pt-2">
             <button
-              onClick={() => addSlide("content")}
-              className="px-4 py-2.5 bg-white border border-zinc-200 rounded-xl text-sm font-medium text-zinc-600 hover:border-blue-300 hover:text-blue-600 hover:shadow-sm transition"
+              onClick={() => setAddMenuOpen(!addMenuOpen)}
+              className="px-5 py-2.5 bg-white border border-zinc-200 rounded-xl text-sm font-medium text-zinc-600 hover:border-blue-300 hover:text-blue-600 hover:shadow-sm transition"
             >
-              + 콘텐츠 슬라이드
+              + 슬라이드 추가
             </button>
-            <button
-              onClick={() => addSlide("two-column")}
-              className="px-4 py-2.5 bg-white border border-zinc-200 rounded-xl text-sm font-medium text-zinc-600 hover:border-blue-300 hover:text-blue-600 hover:shadow-sm transition"
-            >
-              + 2단 비교 슬라이드
-            </button>
+
+            {addMenuOpen && (
+              <>
+                <div className="fixed inset-0 z-20" onClick={() => setAddMenuOpen(false)} />
+                <div className="absolute top-full mt-2 z-30 bg-white border border-zinc-200 rounded-xl shadow-lg py-1 min-w-[200px]">
+                  {ADD_LAYOUTS.map((l) => (
+                    <button
+                      key={l}
+                      onClick={() => addSlide(l)}
+                      className="w-full text-left px-4 py-2.5 text-sm hover:bg-zinc-50 transition flex items-center justify-between"
+                    >
+                      <span className="font-medium">{LAYOUT_LABELS[l]}</span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </section>
 

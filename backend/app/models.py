@@ -3,30 +3,9 @@ from __future__ import annotations
 from pydantic import BaseModel
 
 
-class TitleSlide(BaseModel):
-    layout: str = "title"
-    title: str
-    subtitle: str = ""
-
-
-class ContentSlide(BaseModel):
-    layout: str = "content"
-    title: str
-    bullets: list[str] = []
-
-
-class TwoColumnSlide(BaseModel):
-    layout: str = "two-column"
-    title: str
-    left_title: str = ""
-    left_bullets: list[str] = []
-    right_title: str = ""
-    right_bullets: list[str] = []
-
-
-class ClosingSlide(BaseModel):
-    layout: str = "closing"
-    title: str = "감사합니다"
+class ImageData(BaseModel):
+    data: str  # base64
+    content_type: str = "image/png"
 
 
 class SlideRequest(BaseModel):
@@ -38,6 +17,8 @@ class SlideRequest(BaseModel):
     left_bullets: list[str] = []
     right_title: str = ""
     right_bullets: list[str] = []
+    images: list[ImageData] = []
+    caption: str = ""
 
 
 class PresentationRequest(BaseModel):

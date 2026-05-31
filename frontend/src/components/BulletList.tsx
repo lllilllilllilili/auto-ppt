@@ -4,9 +4,10 @@ interface BulletListProps {
   bullets: string[];
   onChange: (bullets: string[]) => void;
   placeholder?: string;
+  numbered?: boolean;
 }
 
-export default function BulletList({ bullets, onChange, placeholder = "내용 입력" }: BulletListProps) {
+export default function BulletList({ bullets, onChange, placeholder = "내용 입력", numbered = false }: BulletListProps) {
   const update = (index: number, value: string) => {
     const next = [...bullets];
     next[index] = value;
@@ -35,7 +36,9 @@ export default function BulletList({ bullets, onChange, placeholder = "내용 �
     <div className="space-y-2">
       {bullets.map((b, i) => (
         <div key={i} className="flex items-center gap-2">
-          <span className="text-zinc-400 text-sm select-none">●</span>
+          <span className="text-zinc-400 text-sm select-none w-5 text-center shrink-0">
+            {numbered ? `${i + 1}.` : "●"}
+          </span>
           <input
             type="text"
             value={b}
@@ -45,20 +48,11 @@ export default function BulletList({ bullets, onChange, placeholder = "내용 �
             className="flex-1 px-3 py-1.5 text-sm border border-zinc-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition"
           />
           {bullets.length > 1 && (
-            <button
-              onClick={() => remove(i)}
-              className="text-zinc-300 hover:text-red-400 transition text-lg leading-none"
-              title="삭제"
-            >
-              ×
-            </button>
+            <button onClick={() => remove(i)} className="text-zinc-300 hover:text-red-400 transition text-lg leading-none" title="삭제">×</button>
           )}
         </div>
       ))}
-      <button
-        onClick={add}
-        className="text-sm text-zinc-400 hover:text-blue-500 transition pl-5"
-      >
+      <button onClick={add} className="text-sm text-zinc-400 hover:text-blue-500 transition pl-7">
         + 항목 추가
       </button>
     </div>

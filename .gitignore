@@ -6,3 +6,4 @@ venv/
 .env
 .idea/
 .DS_Store
+backend/ref_images/
