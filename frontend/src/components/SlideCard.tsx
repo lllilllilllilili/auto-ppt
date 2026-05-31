@@ -129,21 +129,21 @@ export default function SlideCard({
             <Field label="제목">
               <input type="text" value={slide.title} onChange={(e) => patch({ title: e.target.value })} placeholder="슬라이드 제목" className="input-light" />
             </Field>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-4">
               <div>
                 <Field label="왼쪽 제목">
                   <input type="text" value={slide.left_title} onChange={(e) => patch({ left_title: e.target.value })} placeholder="예: As-Is" className="input-light" />
                 </Field>
                 <div className="mt-3">
-                  <BulletList bullets={slide.left_bullets} onChange={(b) => patch({ left_bullets: b })} placeholder="왼쪽" />
+                  <BulletList bullets={slide.left_bullets} onChange={(b) => patch({ left_bullets: b })} placeholder="왼쪽 항목" />
                 </div>
               </div>
-              <div>
+              <div className="border-t border-zinc-100 pt-4">
                 <Field label="오른쪽 제목">
                   <input type="text" value={slide.right_title} onChange={(e) => patch({ right_title: e.target.value })} placeholder="예: To-Be" className="input-light" />
                 </Field>
                 <div className="mt-3">
-                  <BulletList bullets={slide.right_bullets} onChange={(b) => patch({ right_bullets: b })} placeholder="오른쪽" />
+                  <BulletList bullets={slide.right_bullets} onChange={(b) => patch({ right_bullets: b })} placeholder="오른쪽 항목" />
                 </div>
               </div>
             </div>
